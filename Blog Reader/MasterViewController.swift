@@ -26,6 +26,44 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        let urlString = "https://www.googleapis.com/blogger/v3/blogs/10861780/posts?key=AIzaSyDDpLNDdScgBf4_6WfVklvpKwyN8lkzex0"
+        let url = NSURL(string: urlString)
+        let session = NSURLSession.sharedSession()
+        
+        let task = session.dataTaskWithURL(url!, completionHandler: { (webData, webResponse, webError) -> Void in
+            if webError != nil {
+                println(webError)
+            } else {
+                // Return the whole page as Dictionary
+                let jsonResult = NSJSONSerialization.JSONObjectWithData(webData, options: NSJSONReadingOptions.MutableContainers, error: nil) as NSDictionary
+                // Prepare space for saving data
+                var myResult:[[String:String]] = []
+                
+                // Extract target information
+
+                // The value of keyword "items" is an array of dictionary which contains all the blogs
+                let blogArray:[NSDictionary] = jsonResult["items"] as [NSDictionary]
+                // Pickup each element in the array
+                for var index = 0; index < blogArray.count; index++ {
+                    // Create an emmpty element
+                    myResult.append([String:String]())
+                    var myItem = myResult[index]
+                    var blogItem = blogArray[index]
+                    
+                    myItem["content"] = blogItem["content"] as NSString
+                    myItem["title"] = blogItem["title"] as NSString
+                    myItem["publishedDate"] = blogItem["published"] as NSString
+                    
+                    // The value of keyword "author" is a Dictionary
+                    var authorDictionary = blogItem["author"] as NSDictionary
+                    myItem["author"] = authorDictionary["displayName"] as NSString
+                }
+                
+            }
+        })
+        
+        task.resume()
 
         if let split = self.splitViewController {
             let controllers = split.viewControllers
