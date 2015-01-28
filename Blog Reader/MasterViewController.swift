@@ -27,6 +27,11 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
+        // Core data preparation
+        var appDel:AppDelegate = UIApplication.sharedApplication().delegate as AppDelegate
+        var context:NSManagedObjectContext = appDel.managedObjectContext!
+        
+        // JSON data preparation
         let urlString = "https://www.googleapis.com/blogger/v3/blogs/10861780/posts?key=AIzaSyDDpLNDdScgBf4_6WfVklvpKwyN8lkzex0"
         let url = NSURL(string: urlString)
         let session = NSURLSession.sharedSession()
@@ -35,12 +40,28 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
             if webError != nil {
                 println(webError)
             } else {
-                // Return the whole page as Dictionary
+                
+                
+                // Remove previously saved database
+                var request = NSFetchRequest(entityName: "BlogItems")
+                request.returnsObjectsAsFaults = false
+                var requestError:NSError? = nil;
+                var results = context.executeFetchRequest(request, error: &requestError)
+                if results?.count > 0 {
+                    for result:AnyObject in results! {
+                        context.deleteObject(result as NSManagedObject)
+                    }
+                }
+                context.save(nil)
+                
+                // Return all the posts as Dictionary
                 let jsonResult = NSJSONSerialization.JSONObjectWithData(webData, options: NSJSONReadingOptions.MutableContainers, error: nil) as NSDictionary
                 // Prepare space for saving data
                 var myResult:[[String:String]] = []
+                // Prepare for core data saving
+                var newBlogItem:NSManagedObject
                 
-                // Extract target information
+                // Extract information from JSON
 
                 // The value of keyword "items" is an array of dictionary which contains all the blogs
                 let blogArray:[NSDictionary] = jsonResult["items"] as [NSDictionary]
@@ -58,8 +79,22 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
                     // The value of keyword "author" is a Dictionary
                     var authorDictionary = blogItem["author"] as NSDictionary
                     myItem["author"] = authorDictionary["displayName"] as NSString
+                    
+                    // Construct database
+                    newBlogItem = NSEntityDescription.insertNewObjectForEntityForName("BlogItems", inManagedObjectContext: context) as NSManagedObject
+                    newBlogItem.setValue(myItem["author"], forKey: "author")
+                    newBlogItem.setValue(myItem["title"], forKey: "title")
+                    newBlogItem.setValue(myItem["content"], forKey: "content")
+                    newBlogItem.setValue(myItem["publishedDate"], forKey: "publishedDate")
+                    
+                    // Save database
+                    var newBlogItemError:NSError? = nil
+                    context.save(&newBlogItemError)
                 }
                 
+                // Access saved database
+                results = context.executeFetchRequest(request, error: &requestError)
+                println(results)
             }
         })
         
