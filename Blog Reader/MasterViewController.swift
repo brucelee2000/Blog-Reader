@@ -32,7 +32,8 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         var context:NSManagedObjectContext = appDel.managedObjectContext!
         
         // JSON data preparation
-        let urlString = "https://www.googleapis.com/blogger/v3/blogs/10861780/posts?key=AIzaSyDDpLNDdScgBf4_6WfVklvpKwyN8lkzex0"
+        //let urlString = "https://www.googleapis.com/blogger/v3/blogs/10861780/posts?key=AIzaSyDDpLNDdScgBf4_6WfVklvpKwyN8lkzex0"
+        let urlString = "https://www.googleapis.com/blogger/v3/blogs/6059874241017858476/posts?key=AIzaSyDDpLNDdScgBf4_6WfVklvpKwyN8lkzex0"
         let url = NSURL(string: urlString)
         let session = NSURLSession.sharedSession()
         
@@ -67,7 +68,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
                 let blogArray:[NSDictionary] = jsonResult["items"] as [NSDictionary]
                 // Pickup each element in the array
                 for var index = 0; index < blogArray.count; index++ {
-                    // Create an emmpty element
+                    // Create an empty element
                     myResult.append([String:String]())
                     var myItem = myResult[index]
                     var blogItem = blogArray[index]
@@ -80,12 +81,17 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
                     var authorDictionary = blogItem["author"] as NSDictionary
                     myItem["author"] = authorDictionary["displayName"] as NSString
                     
+                    var imageDictionary = authorDictionary["image"] as NSDictionary
+                    myItem["image"] = imageDictionary["url"] as NSString
+                    myItem["image"] = "http:" + myItem["image"]!
+                    
                     // Construct database
                     newBlogItem = NSEntityDescription.insertNewObjectForEntityForName("BlogItems", inManagedObjectContext: context) as NSManagedObject
                     newBlogItem.setValue(myItem["author"], forKey: "author")
                     newBlogItem.setValue(myItem["title"], forKey: "title")
                     newBlogItem.setValue(myItem["content"], forKey: "content")
                     newBlogItem.setValue(myItem["publishedDate"], forKey: "publishedDate")
+                    newBlogItem.setValue(myItem["image"], forKey: "image")
                     
                     // Save database
                     var newBlogItemError:NSError? = nil
@@ -104,6 +110,7 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
             let controllers = split.viewControllers
             self.detailViewController = controllers[controllers.count-1].topViewController as? DetailViewController
         }
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -168,6 +175,22 @@ class MasterViewController: UITableViewController, NSFetchedResultsControllerDel
         let object = self.fetchedResultsController.objectAtIndexPath(indexPath) as NSManagedObject
         cell.textLabel!.text = object.valueForKey("title")!.description
         cell.detailTextLabel!.text = object.valueForKey("author")!.description
+        
+
+        let imageString = object.valueForKey("image")!.description as String
+        let imageURL = NSURL(string: imageString)
+        let imageURLRequest = NSURLRequest(URL: imageURL!)
+        
+        NSURLConnection.sendAsynchronousRequest(imageURLRequest, queue: NSOperationQueue.mainQueue(), completionHandler: { (imageURLResponse, imageURLData, imageURLError) -> Void in
+            if imageURLError != nil {
+                println(imageURLError)
+            } else {
+                //println(imageURLData)
+                var cellImage = UIImage(data: imageURLData)
+                cell.imageView?.image = cellImage
+            }
+        })
+        
     }
 
     // MARK: - Fetched results controller

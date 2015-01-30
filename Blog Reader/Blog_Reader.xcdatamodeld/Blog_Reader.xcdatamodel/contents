@@ -3,10 +3,11 @@
     <entity name="BlogItems" syncable="YES">
         <attribute name="author" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="content" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="image" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="publishedDate" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="title" optional="YES" attributeType="String" syncable="YES"/>
     </entity>
     <elements>
-        <element name="BlogItems" positionX="261" positionY="198" width="128" height="105"/>
+        <element name="BlogItems" positionX="261" positionY="198" width="128" height="118"/>
     </elements>
 </model>
